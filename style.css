@@ -1,0 +1,178 @@
+* {
+  box-sizing: border-box; 
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Open Sans', sans-serif;
+  font-family: 'Rubik', sans-serif;
+}
+
+a {
+  text-decoration: none;
+}
+h2 {
+  display: block;
+  text-align: center ;
+  align-self: center;
+  
+  align-items: center;
+  font-size: 1.5em;
+  /* margin-block-start: 0.90em;
+  margin-block-end: 0.83em;
+  margin-inline-start: 20px; */
+  margin-inline-end: 0px;
+  font-weight: bold;
+  unicode-bidi: isolate;
+}
+
+
+ul, ol, li {
+  list-style: none; 
+}
+
+input, input::placeholder {
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+section {
+  width: 100%;
+}
+
+input {
+  width: 50%;
+  height: 60px;
+  margin-left: 300px;
+  margin-top: 20px;
+  color: #333;
+  border: 1px solid #dcdce6;
+  border-radius: 8px;
+  padding: 0 24px;
+  
+  background-color: #dadede;
+}
+
+button {
+  cursor: pointer;
+}
+
+.button {
+  width: 60%;
+  max-width: 200px;
+  height: 50px;
+  line-height: 50px;
+  background: #db7531;
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 700;
+  margin: 16px auto; 
+  display: block;
+  text-align: center;
+  text-decoration: none;
+  font-size: 18px;
+  transition: filter 0.2s;
+  border-radius: 25px;
+  box-shadow: 0px 4px 6px #2522229d ;
+}
+
+.button:hover {
+  filter: brightness(90%);
+}
+
+.button:active {
+  box-shadow: inset 0px 4px 6px #2522229d;
+  filter: brightness(80%);
+}
+
+.main {
+  margin: 10px 20px;
+}
+
+.header {
+  width: 100%;
+  height: 10vh;
+  min-height: 40px;
+  background-color: #db7531;
+  color: #FFFFFF;
+  text-align: center;
+  line-height: 10vh;
+}
+
+.result {
+  font-family: 'IBM Plex Mono', monospace;
+  overflow-wrap: break-word;
+  margin-top: 20px;
+}
+
+.result .card {
+  box-shadow: 0 2px 8px 2px rgba(0,0,0,0.3);
+  transition: 0.3s;
+
+  width: 50%;
+  background-color: #ECEFF1; 
+  margin-top: 10px;
+  margin-left: 300px;
+  padding: 5px;
+}
+
+.result .card:hover {
+  box-shadow: 0 8px 16px 0 rgba(0,0,0,0.3);
+}
+
+.result .card > :first-child {
+  background: #db7531;
+  font-weight: bold;
+  text-align: center;
+  padding: 3px;
+  color: rgb(25, 29, 41);
+}
+
+.alert {
+  display: block;
+  width: 100%;
+  height: 50px; 
+  text-align: center;
+  line-height: 50px; 
+  font-size: large;
+  position: fixed;
+  bottom: 10px;
+  right: 0;
+  box-shadow: 0 0 4px #333;
+}
+
+.warning {
+  background-color: #e8263c;
+  color: white;
+  font-weight: bold;
+}
+
+@media screen and (min-width: 900px) {
+  .main {
+      margin: 20px 60px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+  }
+
+  section {
+      margin: 0 15px;
+  }
+}
+
+@media screen and (max-height: 430px) {
+  .header {
+      height: 50px;
+      line-height: 50px;
+  }
+  
+  .header h1 {
+      line-height: inherit;
+  }
+  
+  .alert {
+      position: static;
+      margin: 15px 0;
+  }
+}
