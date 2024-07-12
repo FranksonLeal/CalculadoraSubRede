@@ -86,7 +86,7 @@ function verificarRede(ip, mascara) {
 
 function verificarBroadcast(ip, mascara) {
   ip = converterDecimalParaBinarioQuatroOctetos(ip);
-  mascara = negacaoBinariaQuatroOctetos(converterDecimalParaBinarioQuatroOctetos(mascara));
+  mascara = converterDecimalParaBinarioQuatroOctetos(mascara);
 
   let broadcast = "";
 
@@ -97,14 +97,18 @@ function verificarBroadcast(ip, mascara) {
     if (ipBin === "." || mascaraBin === ".") {
       broadcast += ".";
     } else {
-      broadcast += ipBin | mascaraBin;
+      broadcast += ipBin | (negacaoBinaria(mascaraBin));
     }
   }
 
   return converteBinarioParaDecimalQuatroNumeros(broadcast);
 }
 
+
+
 function converterDecimalParaBinarioQuatroOctetos(value) {
+  // Converte para string para garantir que podemos usar split
+  value = value.toString();
   value = value.split(".");
   let octetos = preencherOcteto(converterDecimalParaBinario(value[0]));
   octetos += "." + preencherOcteto(converterDecimalParaBinario(value[1]));
@@ -176,7 +180,7 @@ function verificarSubrede(classeIp, mascara) {
     case "C":
       return Math.pow(2, Math.abs(24 - qtdBitsLigado(mascara)));
     default:
-      throw new Error("Não foi possível calcular a subrede");
+      return "N/A"; // Sub-redes não se aplicam a Classe D e E
   }
 }
 
@@ -191,6 +195,12 @@ function qtdBitsLigado(mascara) {
 
 function qtdBitsDesligado(mascara) {
   return mascara.match(/0/g).length;
+}
+
+function aumentarIp(ip, incremento) {
+  const ipBinario = converterDecimalParaBinarioQuatroOctetos(ip).replace(/\./g, '');
+  const ipNovoBinario = (parseInt(ipBinario, 2) + incremento).toString(2).padStart(32, '0');
+  return converteBinarioParaDecimalQuatroNumeros(formatarBinarioQuatroOctetos(ipNovoBinario));
 }
 
 const $form = document.querySelector("form");
@@ -223,13 +233,13 @@ $form.addEventListener("submit", function(e) {
           mascara = "255.255.255.0";
           break;
         default:
-          throw new Error("Classe de IP inválida para máscara de sub-rede.");
+          throw new Error("Classe IP inválida ou não suportada");
       }
     }
 
     const rede = verificarRede(ip, mascara);
     const broadcast = verificarBroadcast(ip, mascara);
-    const host = verificarHost(mascara);
+    const host = classe === "D" || classe === "E" ? "N/A" : verificarHost(mascara);
     const subrede = cidr ? verificarSubrede(classe || verificarClasse(ip), mascara) : "N/A";
 
     const $secaoResultado = document.querySelector('.result');
@@ -239,9 +249,20 @@ $form.addEventListener("submit", function(e) {
     $secaoResultado.insertAdjacentHTML('beforeend', criarCard('Máscara', mascara, converterDecimalParaBinarioQuatroOctetos(mascara)));
     $secaoResultado.insertAdjacentHTML('beforeend', criarCard('Endereço de Rede', rede, converterDecimalParaBinarioQuatroOctetos(rede)));
     $secaoResultado.insertAdjacentHTML('beforeend', criarCard('Endereço de Broadcast', broadcast, converterDecimalParaBinarioQuatroOctetos(broadcast)));
-    $secaoResultado.insertAdjacentHTML('beforeend', criarCard('Quantidade de host por rede/sub-rede', host));
+    $secaoResultado.insertAdjacentHTML('beforeend', criarCard('Quantidade de host', host));
     $secaoResultado.insertAdjacentHTML('beforeend', criarCard('Quantidade de sub-redes', subrede));
 
+    if (cidr && classe !== "D" && classe !== "E") {
+      const $btnSubredes = document.createElement('button');
+      $btnSubredes.textContent = "Mostrar Subredes";
+      $btnSubredes.classList.add('button');
+      $btnSubredes.addEventListener('click', function() {
+        const subredes = calcularSubredes(rede, cidr, subrede); // Passando a quantidade de sub-redes dinâmica
+        mostrarTabelaSubredes(subredes);
+        $btnSubredes.disabled = true;
+      });
+      $secaoResultado.appendChild($btnSubredes);
+    }
   } catch (error) {
     document.querySelector('body').insertAdjacentHTML('beforeend', 
                              `<div class="result alert warning">
@@ -253,6 +274,62 @@ $form.addEventListener("submit", function(e) {
 function limparCampos() {
   document.querySelector('.result') ? document.querySelector('.result').innerHTML = "" : "";
 }
+
+
+
+
+
+//MOSTRAR A TEBELA DE SUBREDES AO CLICAR NO BOTÃO DE MOSTRAR SUB REDES
+
+
+function calcularSubredes(ip, cidr, qtdSubredes) {
+  const blocos = Math.pow(2, 32 - cidr);
+  const ipBinario = converterDecimalParaBinarioQuatroOctetos(ip).replace(/\./g, '');
+
+  let subredes = [];
+
+  // Calculando as sub-redes dinâmicas com base na quantidade especificada
+  for (let i = 0; i < qtdSubredes; i++) {
+    const subredeBinario = (parseInt(ipBinario, 2) + i * blocos).toString(2).padStart(32, '0');
+    const subredeBinarioFormatado = formatarBinarioQuatroOctetos(subredeBinario);
+    const redeDecimal = converteBinarioParaDecimalQuatroNumeros(subredeBinarioFormatado);
+    
+    // Calculando o endereço de broadcast corretamente
+    const broadcastDecimal = aumentarIp(redeDecimal, blocos - 1);
+    
+    const primeiroIpValido = aumentarIp(redeDecimal, 1);
+    const ultimoIpValido = aumentarIp(broadcastDecimal, -1);
+
+    subredes.push({
+      rede: redeDecimal,
+      broadcast: broadcastDecimal,
+      primeiroIpValido,
+      ultimoIpValido,
+      mascara: notacaoCIDR(cidr),
+      cidr: cidr // Adicionando o CIDR como parte do objeto subrede
+    });
+  }
+
+  return subredes;
+}
+
+
+function aumentarIp(ip, incremento) {
+  const ipBinario = converterDecimalParaBinarioQuatroOctetos(ip).replace(/\./g, '');
+  const ipNovoBinario = (parseInt(ipBinario, 2) + incremento).toString(2).padStart(32, '0');
+  return converteBinarioParaDecimalQuatroNumeros(formatarBinarioQuatroOctetos(ipNovoBinario));
+}
+
+
+
+function formatarBinarioQuatroOctetos(binario) {
+  return binario.match(/.{1,8}/g).join('.');
+}
+
+function converteBinarioParaDecimalQuatroNumeros(value) {
+  return value.split('.').map(octeto => parseInt(octeto, 2)).join('.');
+}
+
 
 function criarCard(texto, valor1, valor2) {
   if (!!valor2) {
@@ -267,4 +344,47 @@ function criarCard(texto, valor1, valor2) {
               <p>${valor1}</p>
             </div>`
   }
+}
+
+function mostrarTabelaSubredes(subredes) {
+  let tabelaHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Sub-rede</th>
+          <th>Endereço de Rede</th>
+          <th>Endereço de Broadcast</th>
+          <th>Primeiro IP Válido</th>
+          <th>Último IP Válido</th>
+          <th>Máscara de Sub-rede</th>
+          
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  subredes.forEach((subrede, index) => {
+    tabelaHTML += `
+      <tr>
+        <td>${index + 1}°</td>
+        <td>${subrede.rede}/${subrede.cidr}</td>
+        <td>${subrede.broadcast}</td>
+        <td>${subrede.primeiroIpValido}</td>
+        <td>${subrede.ultimoIpValido}</td>
+        <td>${subrede.mascara}</td>
+        
+      </tr>
+    `;
+  });
+
+  tabelaHTML += `
+      </tbody>
+    </table>
+  `;
+
+  // Utilize querySelectorAll para obter todos os elementos '.result' e adicionar a tabela
+  const $secoesResultado = document.querySelectorAll('.result');
+  $secoesResultado.forEach($secaoResultado => {
+    $secaoResultado.insertAdjacentHTML('beforeend', tabelaHTML);
+  });
 }
